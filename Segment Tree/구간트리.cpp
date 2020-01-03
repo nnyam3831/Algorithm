@@ -24,3 +24,21 @@ struct RMQ{
 }; 
 
 
+// Query 연산 구현 O(lgn)
+const int INT_MAX = numeric_limits<int>::max();
+struct RMQ{
+	//node가 표현하는 범위 array[nodeleft, noderight] 가 주어질 때
+	//이 범위와 array[left,right]의 교집합의 최소치를 구한다.
+	int query(int left, int right, int node, int nodeleft, int nodeRight){
+		// 두 구간이 겹치지 않으면 아주 큰 값 리턴
+		if(right < node Left || nodeRight < left) return INT_MAX;
+		if(left <= nodeLeft && nodeRight <= right)
+			return rangeMin[node];
+		// 그 외에는 양쪽구간을 다시 재귀
+		int mid = (nodeLeft + nodeRight) / 2;
+		return min(query(left, right, node*2, nodeLeft, mid), query(left, right, node*2+1, mid+1, nodeRight)); 
+	} 
+	int query(int left, int right){
+		return query(left, right, 1, 0, n-1);
+	}
+}; 
