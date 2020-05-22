@@ -1,138 +1,94 @@
-#include <cstdlib>
 #include <string>
 #include <vector>
-#include <queue>
-#include <utility>
 #include <algorithm>
-#include <iostream>
+#include <unordered_map>
+
 using namespace std;
 
-int d[301][301];
-int dx[4] = {0, 0, 1, -1};
-int dy[4] = {1, -1, 0, 0};
-int cnt = 0;
-int parent[100001];
+const int go_max = 26;
 
-void bfs(int x, int y, int cnt, vector<vector<int>> land, int height)
+struct trie
 {
-    queue<pair<int, int>> q;
-    q.push(make_pair(x, y));
-    d[x][y] = cnt;
+    bool output;
+    trie *go[go_max];
+    unordered_map<int, int> mp;
 
-    while (!q.empty())
+    trie()
     {
-        x = q.front().first;
-        y = q.front().second;
-        q.pop();
-
-        for (int k = 0; k < 4; k++)
-        {
-            int nx = x + dx[k];
-            int ny = y + dy[k];
-
-            if (nx >= 0 && nx < land.size() && ny >= 0 && ny < land[0].size())
-            {
-                if (d[nx][ny] == 0 && abs(land[x][y] - land[nx][ny]) <= height)
-                {
-                    q.push(make_pair(nx, ny));
-                    d[nx][ny] = cnt;
-                }
-            }
-        }
+        fill(go, go + go_max, nullptr);
+        output = false;
     }
-}
 
-struct edge
-{
-    int v1, v2, weight;
-
-    edge(int v1, int v2, int weight)
+    ~trie()
     {
-        this->v1 = v1;
-        this->v2 = v2;
-        this->weight = weight;
+        for (int i = 0; i < go_max; i++)
+            if (go[i])
+                delete go[i];
+    }
+
+    void insert(const char *key, int l)
+    {
+        if (*key == '\0')
+        {
+            output = true;
+            return;
+        }
+        int idx = *key - 'a';
+        mp[l] += 1;
+        if (!go[idx])
+        {
+            go[idx] = new trie;
+        }
+        go[idx]->insert(key + 1, l);
+    }
+
+    int find(const char *key, int l)
+    {
+        if (*key == '\0')
+            return output;
+        int ret = 0;
+        int idx = *key - 'a';
+        if (*key == '?')
+        {
+            ret += mp[l];
+        }
+        else
+        {
+            if (!go[idx])
+                return 0;
+            ret = go[idx]->find(key + 1, l);
+        }
+        return ret;
     }
 };
 
-int find(int node)
+vector<int> solution(vector<string> w, vector<string> q)
 {
-    if (parent[node] == node)
-        return node;
-    return parent[node] = find(parent[node]);
-}
+    trie *root_f = new trie;
+    trie *root_r = new trie;
 
-void _union(int a, int b)
-{
-    int pa = find(a);
-    int pb = find(b);
-
-    if (pa == pb)
-        return;
-    parent[pb] = pa;
-}
-
-int compareTo(const edge &a, const edge &b)
-{
-    if (a.weight < b.weight)
-        return 1;
-    else
-        return 0;
-}
-
-int solution(vector<vector<int>> land, int height)
-{
-
-    for (int i = 0; i < land.size(); i++)
+    int wl = w.size(), ql = q.size();
+    for (int i = 0; i < wl; i++)
     {
-        for (int j = 0; j < land[0].size(); j++)
+        string s = w[i];
+        root_f->insert(&s[0], s.size());
+        reverse(s.begin(), s.end());
+        root_r->insert(&s[0], s.size());
+    }
+
+    vector<int> ans(ql);
+    for (int i = 0; i < ql; i++)
+    {
+        string query = q[i];
+        if (query[0] != '?')
         {
-            if (d[i][j] == 0)
-                bfs(i, j, ++cnt, land, height);
+            ans[i] = root_f->find(&query[0], query.size());
+        }
+        else
+        {
+            reverse(query.begin(), query.end());
+            ans[i] = root_r->find(&query[0], query.size());
         }
     }
-
-    for (int i = 1; i <= cnt; i++)
-        parent[i] = i;
-
-    vector<edge> v;
-    for (int i = 0; i < land.size(); i++)
-    {
-        for (int j = 0; j < land[0].size(); j++)
-        {
-            for (int k = 0; k < 4; k++)
-            {
-                int nx = i + dx[k];
-                int ny = j + dy[k];
-
-                if (nx >= 0 && nx < land.size() && ny >= 0 && ny < land[0].size())
-                {
-                    if (d[i][j] != d[nx][ny])
-                        v.push_back(edge(d[i][j], d[nx][ny], abs(land[i][j] - land[nx][ny])));
-                }
-            }
-        }
-    }
-    sort(v.begin(), v.end(), compareTo);
-    for (int i = 0; i < v.size(); i++)
-    {
-        cout << v[i].v1 << " " << v[i].v2 << " " << v[i].weight << "\n";
-    }
-    int answer = 0;
-    for (int i = 0; i < v.size(); i++)
-    {
-        if (find(v[i].v1) != find(v[i].v2))
-        {
-            _union(v[i].v1, v[i].v2);
-            answer += v[i].weight;
-        }
-    }
-    return answer;
-}
-
-int main(void)
-{
-    vector<vector<int>> v1 = {{1, 4, 8, 10}, {5, 5, 5, 5}, {10, 10, 10, 10}, {10, 10, 10, 20}};
-    vector<vector<int>> v2 = {{10, 11, 10, 11}, {2, 21, 20, 10}, {1, 20, 21, 11}, {2, 1, 2, 1}};
-    solution(v2, 3);
-    return 0;
+    return ans;
 }
