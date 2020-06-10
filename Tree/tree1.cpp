@@ -38,7 +38,7 @@ class Tree{
 				cout << "Data is bigger than " << n->data << "\n";
 				searchBTree(n->right, find);
 			}else{
-				cout << "Data found!\n"; 
+				cout << "Data found!\n";
 			}
 		}
 		void findNext(Node* node){
