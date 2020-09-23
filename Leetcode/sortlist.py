@@ -4,54 +4,27 @@ class Solution(object):
         :type head: ListNode
         :rtype: ListNode
         """
-        if head is None:
-            return None
+        if not head or not head.next:
+            return head
 
-        def getSize(head):
-            counter = 0
-            while(head is not None):
-                counter += 1
-                head = head.next
-            return counter
+        prev, slow, fast = head, head, head
+        while fast and fast.next:
+            prev = slow
+            slow = slow.next
+            fast = fast.next.next
 
-        def split(head, step):
-            i = 1
-            while (i < step and head):
-                head = head.next
-                i += 1
+        prev.next = None
+        return self._merge(*map(self.sortList, (head, slow)))
 
-            if head is None:
-                return None
-            # disconnect
-            temp, head.next = head.next, None
-            return temp
+    def _merge(self, l1, l2):
+        dummy = p = ListNode(None)
 
-        def merge(l, r, head):
-            cur = head
-            while(l and r):
-                if l.val < r.val:
-                    cur.next, l = l, l.next
-                else:
-                    cur.next, r = r, r.next
-                cur = cur.next
+        while l1 and l2:
+            if l1.val < l2.val:
+                p.next, l1 = l1, l1.next
+            else:
+                p.next, l2 = l2, l2.next
+            p = p.next
 
-            cur.next = l if l is not None else r
-            while cur.next is not None:
-                cur = cur.next
-            return cur
-
-        size = getSize(head)
-        bs = 1
-        dummy = ListNode(0)
-        dummy.next = head
-        l, r, tail = None, None, None
-        while (bs < size):
-            cur = dummy.next
-            tail = dummy
-            while cur:
-                l = cur
-                r = split(l, bs)
-                cur = split(r, bs)
-                tail = merge(l, r, tail)
-            bs <<= 1
+        p.next = l1 or l2
         return dummy.next
